@@ -1,1 +1,1 @@
-This repo includes same beneficials tools written in Bash Scripting Language which make git usage more convenient.
+This repo includes same beneficial tools written in Bash Scripting Language which make git usage more convenient.
