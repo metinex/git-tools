@@ -1,7 +1,7 @@
 ################################################################
 #
 # Author: Tahsin Turkoz
-# Date: 06.05.2014
+# Date: 06.05.2015
 # Explanation: Get updated files from working directory to 
 #              git local repository and then pushes the changes 
 #              to remote git server

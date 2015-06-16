@@ -9,6 +9,8 @@ then
 fi
 
 cd $1
+# Copying favicon.ico to proper location
+cp wwwroot/favicon.ico .
 
 # Configuring for local usage
 sed -i 's/useMinifiedFiles" value="true/useMinifiedFiles" value="false/' wwwroot/htmlTemplates/pages/common/common-config.shtml
