@@ -33,7 +33,7 @@ else
 			echo "$filename (To be added to repository)"
 			toBeAdded="${toBeAdded}"$'\n'"${filename}"
 			toBeModified="${toBeModified}"$'\n'"${filename}"
-		elif ! diff -b $filename $git_repo/$filename >/dev/null 2>&1
+		elif ! diff -b -I '\s*perfLogger.*' $filename $git_repo/$filename >/dev/null 2>&1
 		then	
 			echo
 			echo $filename
@@ -57,6 +57,7 @@ else
 				if [ -n "$filename" ]
 				then
 					cp $filename $git_repo/$filename
+					sed -i '/perfLogger/d' $git_repo/$filename
 					echo "$filename has copied"
 				fi
 			done 
@@ -73,6 +74,8 @@ else
 			fi
 			git push
 		fi
+	else
+		echo "Nothing to do. Git is up to date."
 	fi
 fi
 echo
