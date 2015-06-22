@@ -9,7 +9,7 @@
 #################################################################
 
 working_dir=/var/www/asda2
-git_repo=/var/www/github/asda
+git_repo=/var/www/github/asda-15.7/asda-ui-prototype
 branch=master
 
 cd $git_repo
@@ -38,7 +38,7 @@ else
 			echo
 			echo $filename
 			echo "------------------------------------------------------"
-			diff -b $filename $git_repo/$filename
+			diff -b -I '\s*perfLogger.*' $filename $git_repo/$filename
 			toBeModified="${toBeModified}"$'\n'"${filename}"
 		fi
 	done <<< "$search"

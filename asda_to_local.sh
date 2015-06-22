@@ -1,3 +1,12 @@
+################################################################
+#
+# Author: Tahsin Turkoz
+# Date: 06.10.2015
+# Explanation: Performs necessary modifications on ASDA to make
+#              it locally work
+#
+#################################################################
+
 if [ -z "$1" -o ! -d "$1" \
      -o ! -f "$1/wwwroot/htmlTemplates/pages/common/common-config.shtml" \
 	 -o ! -f "$1/wwwroot/htmlTemplates/components/document_head.shtml" \
