@@ -11,15 +11,15 @@
 #
 #################################################################
 
-if [ "$#" -ne 2 ] 
+if [ "$#" -le 2 ] 
 then 
 	echo "illegal number of parameters"
-	echo "Usage: $0 filename distinctive_expression"
+	echo "Usage: $0 distinctive_expression filename(s)"
 	exit
 fi
 
-ls -1 $1|while read fname
+ls -1 ${@:2}|while read fname
 do
 	echo -n "$(basename $fname): "
-	grep -A1 $2 $fname|grep "run time"|cut -d' ' -f3|tr -d 'ms'|awk '{ sum+=$1} END {print sum,"ms"}'
+	grep -A1 $1 $fname|grep "run time"|cut -d' ' -f3|tr -d 'ms'|awk '{ sum+=$1} END {print sum,"ms"}'
 done
