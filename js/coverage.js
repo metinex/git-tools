@@ -2,10 +2,16 @@
 // Usage: coverage.logCallee();
 //
 var coverage = function(){
-		
-	function drawToScreen(fileName, funcName){
+	
+	var isOpera = !!window.opera || navigator.userAgent.indexOf(' OPR/') >= 0;
+	var isFirefox = typeof InstallTrigger !== 'undefined';	
+	var isChrome = !!window.chrome && !isOpera;
+	
+	function drawToScreen(fileName, funcName,lineNum, info){
 		var cDiv = document.getElementById("coverageDiv");
 		var hDiv = document.getElementById("coverageHeader");
+		var chDiv = document.getElementById("coverageHeaderCover");
+		var outputDiv = document.getElementById("coverageOutput");;
 		var fileID = fileName.replace(/[`~!@#$%^&*()_|+\-=?;:'",.<>\{\}\[\]\\\/]/gi, '');
 		var funcID = funcName.replace(/[`~!@#$%^&*()_|+\-=?;:'",.<>\{\}\[\]\\\/]/gi, '');
 		
@@ -14,7 +20,7 @@ var coverage = function(){
 			cDiv.id = "coverageDiv";
 			$(cDiv).css({  'width' : '500px', 'position' : 'absolute', 
 						   'top' : '0px', 'right' : '0px', 'background-color' : '#f1f1f1', 
-						   'z-index' : '1000', 'opacity' : '0.93', 'padding' : '7px', 'min-height': '150px'
+						   'z-index' : '1000', 'opacity' : '0.93', 'padding' : '7px', 'min-height': '113px'
 						});
 			document.body.appendChild(cDiv);
 			hDiv=document.createElement("div");
@@ -36,11 +42,53 @@ var coverage = function(){
 						  'padding-right' : '7px'
 						});						
 			hDiv.innerHTML="CoverageJS";
-			cDiv.appendChild(hDiv);		
+			cDiv.appendChild(hDiv);
 			
-			document.addEventListener('DOMContentLoaded', function () {
-			  document.querySelector('button').addEventListener("click", coverage.downloadCSV);
+			chDiv=document.createElement("div");
+			chDiv.id = "coverageHeaderCover";
+			$(chDiv).css({'width' : '44px',
+						  'height': '125px',
+						  'margin': '0',
+						  'position': 'absolute',
+						  'right': '0',
+						  'top': '0',
+						  'border-top-left-radius': '20px'
+						});						
+			chDiv.style.cursor = "move";
+			cDiv.appendChild(chDiv);		
+
+			$(function() {
+				$('body').on('mousedown', 'div#coverageHeaderCover', function() {
+					$('div#coverageDiv').addClass('draggable').parents().on('mousemove', function(e) {
+						$('.draggable').offset({
+							top: e.pageY - 15,
+							left: e.pageX - $('div#coverageDiv').outerWidth() + 25
+						}).on('mouseup', function() {
+							$('div#coverageDiv').removeClass('draggable');
+						});
+					});
+				}).on('mouseup', function() {
+					$('.draggable').removeClass('draggable');
+				});
 			});
+			
+			$( "div#coverageHeaderCover" ).dblclick(function() {
+				if  ($('#coverageDiv').width()==500) {
+					$('div#coverageOutput').css('display', "none");
+					$('button#coverageJSButton').css('display', "none");
+					// Align from right to minimize to the right
+					$('div#coverageDiv').css({ 'left' : '' , 'right': ($(window).width() - ($('div#coverageDiv').offset().left + $('div#coverageDiv').outerWidth())) + 'px'});
+					$('div#coverageDiv').animate({width: '37px'});
+				} else {
+					$('div#coverageOutput').css('display', "block");
+					$('button#coverageJSButton').css('display', "block");
+					// Align from right to extent to the left
+					$('div#coverageDiv').css({ 'left' : '' , 'right': ($(window).width() - ($('div#coverageDiv').offset().left + $('div#coverageDiv').outerWidth())) + 'px'});
+					$('div#coverageDiv').animate({width: '500px'});
+					document.getSelection().removeAllRanges();
+				}
+			});
+			
 			var CSVButton = document.createElement("button");
 			$(CSVButton).css({ 'position': 'absolute',
 							 'right': '50px',
@@ -50,47 +98,71 @@ var coverage = function(){
 			CSVButton.id="coverageJSButton";
 			CSVButton.innerHTML="Get CSV";
 			cDiv.appendChild(CSVButton);
-			$(CSVButton).on('click', coverage.downloadCSV);						
+			$(CSVButton).on('click', coverage.downloadCSV);		
+
+			outputDiv=document.createElement("div");
+			outputDiv.id = "coverageOutput";			
+			cDiv.appendChild(outputDiv);				
 		}
 		
-		if ($(cDiv).find( '#' + fileID).length == 0) {
+		if ($(outputDiv).find( '#' + fileID).length == 0) {
 			var fileDiv = document.createElement("p");
 			fileDiv.id = fileID;
 			fileDiv.innerHTML="<div class='filename' style='font-weight:bold; font-style: italic; text-decoration: underline;'>" + fileName + "</div>";
-			$(cDiv).append(fileDiv);
+			$(outputDiv).append(fileDiv);
 		}
 		
-		funcDiv=$(cDiv).find( '#' + fileID + ' #' + funcID);
+		funcDiv=$(outputDiv).find( '#' + fileID + ' #' + funcID);
 		if ($(funcDiv).length == 0) {
-			 $(cDiv).find( '#' + fileID).append("<div id='" + funcID + "' class='coverageFunction'><span id='funcName'>" + funcName + "</span>: <span id='count'>1</span> times.</div>");			 
+			if (info) {
+				info = "<a onclick=\"coverage.toggleInfo('#" + fileID + " #" + funcID + "');\" style='color:rgb(69, 143, 189);font-weight:bold;'> &#8594;</a><div id='cInfoDiv' style='margin-left:15px;color:rgb(70, 143, 190);border-left: 2px rgb(69, 143, 189) solid;padding-left: 5px;display: none;'>(<span id='info'>"+info+"</span>)</div>";
+			}
+			else
+				info="";
+			$(outputDiv).find( '#' + fileID).append("<div id='" + funcID + "' class='coverageFunction'><span id='funcName'>" + funcName + "</span> (<span id='funcLine'>"+lineNum+"</span>): <span id='count'>1</span> times."+ info +"</div>");			 
 		}
 		else {
 			var cSpan = $(funcDiv).find('#count');
 			cSpan.text(parseInt(cSpan.text())+1);
+			if (info) {
+ 				iSpan = $(funcDiv).find('#info');
+				if (iSpan.length>0)
+					$(iSpan)[0].innerHTML += ", "+info;
+				else
+					$(funcDiv).find('#count').appendChild("<a onclick=\"$('#"+funcID+" #cInfoDiv').slideToggle('fast');\" style='color:rgb(69, 143, 189);font-weight:bold;'> &#8594;</a><div id='cInfoDiv' style='margin-left:15px;color:rgb(70, 143, 190);border-left: 2px rgb(69, 143, 189) solid;padding-left: 5px;display: none;'>(<span id='info'>"+info+"</span>)</div>");
+			}
 			$(funcDiv).css({'color' : 'DarkRed', 'background-color' : 'rgb(48, 223, 206)'});
 			$(hDiv).css('color' , 'DarkRed');
 			setTimeout(function(){
-							$(cDiv).find('.coverageFunction').css({'color' : 'Black', 'background' : 'none'});
+							$(outputDiv).find('.coverageFunction').css({'color' : 'Black', 'background' : 'none'});
 							$(hDiv).css('color' , '#FFFFFF');
 					   }, 2000);
 		}
 	}
 
  return {		
-	logCallee: function () {
+	logCallee: function (info) {
 		var eArr = (new Error).stack.split("\n");
-		var tempArr = eArr[2].replace("(", "").split(" ").slice(-2);
+		var tempArr;
+		if (isChrome) {
+			tempArr = eArr[2].replace("(", "").split(" ").slice(-2);	
+		} else if (isFirefox) {
+			tempArr = eArr[1].split("@");
+		} else
+			return;
+		
 		var funcName = tempArr[0];
-		var fileName = tempArr[1].split(":").slice(0,2).join(':').split('?')[0];		
-		drawToScreen (fileName, funcName);	
+		var fileName = '/' + tempArr[1].split(":").slice(0,2).join(':').split('?')[0].split('/').slice(3).join('/');	
+		var lineNum = parseInt(tempArr[1].split(":")[2]-1);
+		drawToScreen (fileName, funcName,lineNum, info);	
 	},
 	
 	downloadCSV: function () {
-		var output = '"File Name";"Function Name";"Occurance"\n';
-		$('#coverageDiv p').each (function (index, aFile){
+		var output = '"File Name";"Function Name";"Line";"Occurance"\n';
+		$('#coverageOutput p').each (function (index, aFile){
 			var fileName = $(aFile).find('.filename')[0].innerHTML;
 			$(aFile).find('.coverageFunction').each (function (index, aFunction){
-				output += '"' + fileName + '";"' + $(aFunction).find('#funcName')[0].innerHTML + '";"' + $(aFunction).find('#count')[0].innerHTML + '"\n';
+				output += '"' + fileName + '";"' + $(aFunction).find('#funcName')[0].innerHTML + '";"' + $(aFunction).find('#funcLine')[0].innerHTML + '";"' + $(aFunction).find('#count')[0].innerHTML + '"\n';
 			});
 		});
 		
@@ -103,6 +175,15 @@ var coverage = function(){
 		pom.click();
 
 		document.body.removeChild(pom);			
-	}		
+	},
+	
+	toggleInfo: function (funcID){
+		$(funcID+' #cInfoDiv').slideToggle('fast');
+		var indicator = $(funcID+' a')[0];
+		if (indicator.innerHTML == " →")
+			indicator.innerHTML = " ↓";
+		else if (indicator.innerHTML == " ↓")
+			indicator.innerHTML = " →";
+	}
  }
 }();
