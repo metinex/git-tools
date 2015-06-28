@@ -219,7 +219,8 @@ var coverage = function(){
 		var funcName = tempArr[0];
 		var fileName = '/' + tempArr[1].split(":").slice(0,2).join(':').split('?')[0].split('/').slice(3).join('/');	
 		var lineNum = parseInt(tempArr[1].split(":")[2]-1);
-		drawToScreen (fileName, funcName,lineNum, info);	
+		if (fileName && funcName && lineNum)
+			drawToScreen (fileName, funcName,lineNum, info);	
 	},
 	
 	downloadCSV: function () {
