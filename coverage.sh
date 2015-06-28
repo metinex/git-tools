@@ -7,12 +7,29 @@
 #
 #################################################################
 
-if [ $# -lt 2 -o ! -f "$2" ]
+if [ $# -lt 2 ]
 then
 	echo "Usage: $0 -(a|r) JSFile(s)"
 	echo "       $0 -l JSFile [coverage_result.csv]"
-	echo
+	echo "       $0 -c coverage_result1.csv coverage_result2.csv"
+	echo 
+	echo "Used $0 commands are:"
+	echo -e "\t-a\tInjects coverage caller as the first line of the each function in JSFile."
+	echo -e "\t-r\tRemoves previously injected coverage callers from JSFile."
+	echo -e "\t-l\tList name of functions in JSFile. Lists not covered ones if CSV file is also given."
+	echo -e "\t-c\tCompare function calles in two different CSV outputs."
+	echo 
 	exit
+else
+	for fname in ${@:2}
+	do
+		if [ ! -f "$fname" ]
+		then
+			echo "$fname is not a valid filename."
+			echo
+			exit
+		fi
+	done
 fi
 
 
@@ -20,76 +37,70 @@ if [ "$1" = "-r" ]
 then
 	ls -1 ${@:2}|while read fname
 	do
-		if [ -f "$fname" ]
-		then
-			sed -i '/coverage.logCallee/d' $fname
-			echo "$fname cleared"
-		fi
+		sed -i '/coverage.logCallee/d' $fname
+		echo "$fname cleared"
 	done
 elif [ "$1" = "-a" ]
 then
 	ls -1 ${@:2}|while read fname 
-	do
-		if [ -f "$fname" ]
-		then	
-			first_time="1"
-			omit_next_bracket="0"
-			temFile=/tmp/tempFile
-			> $temFile
+	do	
+		first_time="1"
+		omit_next_bracket="0"
+		temFile=/tmp/tempFile
+		> $temFile
 
-			# If EOL is not entered to the lase line
-			while IFS= read -r line || [ -n "$line" ]
-			do
-				#If { was put to previous line
-				if [ "$omit_next_bracket" -eq 1 ]
+		# If EOL is not entered to the lase line
+		while IFS= read -r line || [ -n "$line" ]
+		do
+			#If { was put to previous line
+			if [ "$omit_next_bracket" -eq 1 ]
+			then
+				echo -n "$line"|tr -d "{" >> $temFile
+				omit_next_bracket="0"
+			else
+				echo -n "$line" >> $temFile
+			fi
+			# function defination lines
+			if echo "$line"|grep -qE "((:|=)|^)\s*function.*\(.*\)"
+			then
+				if [ "$first_time" -eq 1 ]
 				then
-					echo -n "$line"|tr -d "{" >> $temFile
-					omit_next_bracket="0"
-				else
-					echo -n "$line" >> $temFile
+					echo
+					echo $fname
+					echo ---------------------------------------------
+					first_time="0"
 				fi
-				# function defination lines
-				if echo "$line"|grep -qE "((:|=)|^)\s*function.*\(.*\)"
-				then
-					if [ "$first_time" -eq 1 ]
-					then
-						echo
-						echo $fname
-						echo ---------------------------------------------
-						first_time="0"
-					fi
-					
-					echo -n "Added coverage after: "					  
-					# { is in the same line and } is not there. 
-					# If } there probably empty function do not
-					# think about it. Probably empty
-					if echo "$line"|grep -q "{"
-					then 
-						echo >> $temFile
-						if echo "$line"|grep -qv "}"
-						then
-							echo -e ' \tcoverage.logCallee();' >> $temFile
-							echo "$line"|xargs|tr -d "{"
-						fi
-					else
-						echo " {" >> $temFile
-						echo -e ' \tcoverage.logCallee();' >> $temFile
-						echo "$line"|xargs
-						omit_next_bracket="1"
-					fi
-					
-				else 
+				
+				echo -n "Added coverage after: "					  
+				# { is in the same line and } is not there. 
+				# If } there probably empty function do not
+				# think about it. Probably empty
+				if echo "$line"|grep -q "{"
+				then 
 					echo >> $temFile
+					if echo "$line"|grep -qv "}"
+					then
+						echo -e ' \tcoverage.logCallee();' >> $temFile
+						echo "$line"|xargs|tr -d "{"
+					fi
+				else
+					echo " {" >> $temFile
+					echo -e ' \tcoverage.logCallee();' >> $temFile
+					echo "$line"|xargs
+					omit_next_bracket="1"
 				fi
-			done < $fname
+				
+			else 
+				echo >> $temFile
+			fi
+		done < $fname
 
-			mv $fname ${fname}.bak
-			cat $temFile > $fname
-		fi
+		mv $fname ${fname}.bak
+		cat $temFile > $fname
 	done			
 elif [ "$1" = "-l" ]
 then
-	if [ -n "$3" -a -f "$3" ]
+	if [ -n "$3" ]
 	then
 		sed 's/^\s*//' $2| grep -nE "((:|=)|^)\s*function.*\(.*\)" |sed 's/{.*$//' > /tmp/function_list
 		jsname="$(echo "$(cd "$(dirname "$2")"; pwd)/$(basename "$2")"|sed 's-/var/www/asda2/wwwroot/assets/theme_default-/theme-')"
@@ -106,4 +117,23 @@ then
 	else
 		sed 's/^\s*//' $2| grep -nE "((:|=)|^)\s*function.*\(.*\)" |sed 's/{.*$//'
 	fi
+elif [ "$1" = "-c" ]
+then
+	leftAddition=$(diff <(cut -d';' -f1-3 $2)  <(cut -d';' -f1-3 $3)| grep '<')
+	if [ -n "$leftAddition" ]
+	then	
+		echo
+		echo "Function called only in $2"
+		echo "----------------------------------"
+		echo "$leftAddition"
+	fi
+	rightAddition=$(diff <(cut -d';' -f1-3 $2)  <(cut -d';' -f1-3 $3)| grep '>')
+	if [ -n "$rightAddition" ]
+	then
+		echo
+		echo "Function called only in $3"
+		echo "----------------------------------"
+		echo "$rightAddition"
+	fi
+	echo
 fi
