@@ -76,24 +76,88 @@ var coverage = function(){
 				if  ($('#coverageDiv').width()==500) {
 					$('div#coverageOutput').css('display', "none");
 					$('button#coverageJSButton').css('display', "none");
+					$('input#searchFilter').css('display', "none");
+					$(searchFilter)
 					// Align from right to minimize to the right
 					$('div#coverageDiv').css({ 'left' : '' , 'right': ($(window).width() - ($('div#coverageDiv').offset().left + $('div#coverageDiv').outerWidth())) + 'px'});
 					$('div#coverageDiv').animate({width: '37px'});
 				} else {
 					$('div#coverageOutput').css('display', "block");
 					$('button#coverageJSButton').css('display', "block");
+					$('input#searchFilter').css('display', "block");
 					// Align from right to extent to the left
 					$('div#coverageDiv').css({ 'left' : '' , 'right': ($(window).width() - ($('div#coverageDiv').offset().left + $('div#coverageDiv').outerWidth())) + 'px'});
 					$('div#coverageDiv').animate({width: '500px'});
+					// For a selection bug in Chrome
 					document.getSelection().removeAllRanges();
 				}
 			});
 			
+			var searchFilter = document.createElement("input");
+			searchFilter.type="text";
+			searchFilter.id="searchFilter";
+			searchFilter.value="Filter";
+			$(searchFilter).css({ 'position': 'absolute',
+							 'right': '50px',
+							 'top': '30px',
+							 'border': '1px solid rgb(66, 139, 202)',
+							 'width': '75px',
+							 'height': '17px',
+							 'padding-left': '5px',
+							 'color': 'gray',
+							 'font-style': 'italic'
+						    });	
+			cDiv.appendChild(searchFilter);
+			$(searchFilter).on('focus',function() {
+				if ($(this).val()=='Filter') {
+					$(this).val('');
+					$(this).css({ 'color': 'black',
+								   'font-style': 'normal' });	
+				}								
+			});		
+			$(searchFilter).on('focusout',function() {
+				if ($(this).val()=='') {
+					$(this).val('Filter');
+					$(this).css({ 'color': 'gray',
+								   'font-style': 'italic' });	
+				}								
+			});	
+			$(searchFilter).on('keyup', function() {
+				var filterString = $(this).val();
+				if (filterString.indexOf("file:") == 0) {
+					filterString = filterString.split(':')[1];
+					$(outputDiv).find("*").show();
+					$(outputDiv).find('div.filename').each( function (index, obj){
+						if (filterString == '')
+							$(obj).parent().show();
+						else if (obj.innerHTML.indexOf(filterString)>-1)
+							$(obj).parent().show();
+						else
+							$(obj).parent().hide();										
+					}); 
+				} else	
+					$(outputDiv).find('.coverageFunction span#funcName').each( function (index, obj){
+						if (filterString=='') {
+							$(obj).parent().parent().show();
+							$(obj).parent().show();
+						}	
+						else if (obj.innerHTML.indexOf(filterString)>-1) {
+							$(obj).parent().show();
+							$(obj).parent().parent().show();
+						}
+						else {
+							$(obj).parent().hide();					
+							if($(obj).parent().parent().children(':visible').length == 1)
+							   $(obj).parent().parent().hide();
+						}
+					});
+			});	
 			var CSVButton = document.createElement("button");
 			$(CSVButton).css({ 'position': 'absolute',
 							 'right': '50px',
 							 'top': '5px',
-							 'border-color': 'rgb(66, 139, 202)'
+							 'border': '1px solid rgb(66, 139, 202)',
+							 'width': '82px'
 						    });			
 			CSVButton.id="coverageJSButton";
 			CSVButton.innerHTML="Get CSV";
@@ -102,6 +166,7 @@ var coverage = function(){
 
 			outputDiv=document.createElement("div");
 			outputDiv.id = "coverageOutput";			
+			$(outputDiv).css({"word-wrap" : "break-word"});			
 			cDiv.appendChild(outputDiv);				
 		}
 		
@@ -159,9 +224,9 @@ var coverage = function(){
 	
 	downloadCSV: function () {
 		var output = '"File Name";"Function Name";"Line";"Occurance"\n';
-		$('#coverageOutput p').each (function (index, aFile){
+		$('#coverageOutput p').filter(':visible').each (function (index, aFile){
 			var fileName = $(aFile).find('.filename')[0].innerHTML;
-			$(aFile).find('.coverageFunction').each (function (index, aFunction){
+			$(aFile).find('.coverageFunction').filter(':visible').each (function (index, aFunction){
 				output += '"' + fileName + '";"' + $(aFunction).find('#funcName')[0].innerHTML + '";"' + $(aFunction).find('#funcLine')[0].innerHTML + '";"' + $(aFunction).find('#count')[0].innerHTML + '"\n';
 			});
 		});
