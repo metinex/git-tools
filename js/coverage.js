@@ -6,12 +6,31 @@ var coverage = function(){
 	var isOpera = !!window.opera || navigator.userAgent.indexOf(' OPR/') >= 0;
 	var isFirefox = typeof InstallTrigger !== 'undefined';	
 	var isChrome = !!window.chrome && !isOpera;
+
+	function getCookie(cname) {
+		var name = cname + "=";
+		var ca = document.cookie.split(';');
+		for(var i=0; i<ca.length; i++) {
+			var c = ca[i];
+			while (c.charAt(0)==' ') c = c.substring(1);
+			if (c.indexOf(name) == 0) return c.substring(name.length,c.length);
+		}
+		return "";
+	}	
 	
+	function setCookie(cname,value) {
+		var d = new Date();
+		d.setTime(d.getTime() + (10*24*60*60*1000));
+		document.cookie = cname + "=" + value + "; expires=" +d.toUTCString()+"; path=/";
+		return "";
+	}
+
 	function drawToScreen(fileName, funcName,lineNum, info){
 		var cDiv = document.getElementById("coverageDiv");
 		var hDiv = document.getElementById("coverageHeader");
 		var chDiv = document.getElementById("coverageHeaderCover");
-		var outputDiv = document.getElementById("coverageOutput");;
+		var outputDiv = document.getElementById("coverageOutput");
+		var searchFilter = document.getElementById("searchFilter");
 		var fileID = fileName.replace(/[`~!@#$%^&*()_|+\-=?;:'",.<>\{\}\[\]\\\/]/gi, '');
 		var funcID = funcName.replace(/[`~!@#$%^&*()_|+\-=?;:'",.<>\{\}\[\]\\\/]/gi, '');
 		
@@ -20,7 +39,7 @@ var coverage = function(){
 			cDiv.id = "coverageDiv";
 			$(cDiv).css({  'width' : '500px', 'position' : 'absolute', 
 						   'top' : '0px', 'right' : '0px', 'background-color' : '#f1f1f1', 
-						   'z-index' : '1000', 'opacity' : '0.93', 'padding' : '7px', 'min-height': '113px'
+						   'z-index' : '1000', 'opacity' : '0.93', 'padding' : '7px', 'min-height': '110px', 'border-bottom-left-radius' : '20px'
 						});
 			document.body.appendChild(cDiv);
 			hDiv=document.createElement("div");
@@ -53,7 +72,7 @@ var coverage = function(){
 						  'right': '0',
 						  'top': '0',
 						  'border-top-left-radius': '20px'
-						});						
+						});				
 			chDiv.style.cursor = "move";
 			cDiv.appendChild(chDiv);		
 
@@ -77,10 +96,10 @@ var coverage = function(){
 					$('div#coverageOutput').css('display', "none");
 					$('button#coverageJSButton').css('display', "none");
 					$('input#searchFilter').css('display', "none");
-					$(searchFilter)
 					// Align from right to minimize to the right
 					$('div#coverageDiv').css({ 'left' : '' , 'right': ($(window).width() - ($('div#coverageDiv').offset().left + $('div#coverageDiv').outerWidth())) + 'px'});
-					$('div#coverageDiv').animate({width: '37px'});
+					$('div#coverageDiv').animate({width: '30px'});
+					setCookie("coverageDisplay","none");
 				} else {
 					$('div#coverageOutput').css('display', "block");
 					$('button#coverageJSButton').css('display', "block");
@@ -90,10 +109,11 @@ var coverage = function(){
 					$('div#coverageDiv').animate({width: '500px'});
 					// For a selection bug in Chrome
 					document.getSelection().removeAllRanges();
+					setCookie("coverageDisplay","block");
 				}
 			});
 			
-			var searchFilter = document.createElement("input");
+			searchFilter = document.createElement("input");
 			searchFilter.type="text";
 			searchFilter.id="searchFilter";
 			searchFilter.value="Filter";
@@ -167,7 +187,10 @@ var coverage = function(){
 			outputDiv=document.createElement("div");
 			outputDiv.id = "coverageOutput";			
 			$(outputDiv).css({"word-wrap" : "break-word"});			
-			cDiv.appendChild(outputDiv);				
+			cDiv.appendChild(outputDiv);
+
+			if ( getCookie("coverageDisplay") == "none")			
+				$(chDiv).trigger("dblclick");			
 		}
 		
 		if ($(outputDiv).find( '#' + fileID).length == 0) {
@@ -184,7 +207,10 @@ var coverage = function(){
 			}
 			else
 				info="";
-			$(outputDiv).find( '#' + fileID).append("<div id='" + funcID + "' class='coverageFunction'><span id='funcName'>" + funcName + "</span> (<span id='funcLine'>"+lineNum+"</span>): <span id='count'>1</span> times."+ info +"</div>");			 
+			$(outputDiv).find( '#' + fileID).append("<div id='" + funcID + "' class='coverageFunction'><span id='funcName'>" + funcName + "</span> (<span id='funcLine'>"+lineNum+"</span>): <span id='count'>1</span> times."+ info +"</div>");
+			// Hide filter excluded divs
+			if ($(searchFilter).val()!="" && $(searchFilter).val()!="Filter")
+				$(searchFilter).trigger("keyup");
 		}
 		else {
 			var cSpan = $(funcDiv).find('#count');

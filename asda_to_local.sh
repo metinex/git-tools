@@ -36,6 +36,7 @@ cd wwwroot/assets/theme_default/style/min/responsive
 wget http://ui1.assets-asda.com/theme/style/min/responsive/signin.css
 wget http://ui1.assets-asda.com/theme/style/min/responsive/responsive.css
 wget http://ui1.assets-asda.com/theme/style/min/responsive/responsiveGlobal.css
+wget http://ui1.assets-asda.com/theme/style/min/responsive/checkout.css
 
 # Integrating PerfLogger library to local web repository
 cd $1/wwwroot/assets/lib/
