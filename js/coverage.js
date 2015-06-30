@@ -6,7 +6,8 @@ var coverage = function(){
 	var isOpera = !!window.opera || navigator.userAgent.indexOf(' OPR/') >= 0;
 	var isFirefox = typeof InstallTrigger !== 'undefined';	
 	var isChrome = !!window.chrome && !isOpera;
-
+	var enableCoverage = false;
+	
 	function getCookie(cname) {
 		var name = cname + "=";
 		var ca = document.cookie.split(';');
@@ -233,6 +234,9 @@ var coverage = function(){
 
  return {		
 	logCallee: function (info) {
+		if (!enableCoverage)
+			return;
+			
 		var eArr = (new Error).stack.split("\n");
 		var tempArr;
 		if (isChrome) {
