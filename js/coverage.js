@@ -6,7 +6,7 @@ var coverage = function(){
 	var isOpera = !!window.opera || navigator.userAgent.indexOf(' OPR/') >= 0;
 	var isFirefox = typeof InstallTrigger !== 'undefined';	
 	var isChrome = !!window.chrome && !isOpera;
-	var enableCoverage = false;
+	var enableCoverage = true;
 	
 	function getCookie(cname) {
 		var name = cname + "=";
@@ -246,8 +246,9 @@ var coverage = function(){
 		} else
 			return;
 		
-		var funcName = tempArr[0];
-		var fileName = '/' + tempArr[1].split(":").slice(0,2).join(':').split('?')[0].split('/').slice(3).join('/');	
+		// Remove different demonstration styles from function names
+		var funcName = tempArr[0].replace(/^Object./gm,'').replace(/^HTMLDocument./gm,'').replace(/^HTMLHtmlElement./gm,'').replace('<.','.');
+		var fileName = '/' + tempArr[1].split(":").slice(0,2).join(':').split('?')[0].split('/').slice(3).join('/');
 		var lineNum = parseInt(tempArr[1].split(":")[2]-1);
 		if (fileName && funcName && lineNum)
 			drawToScreen (fileName, funcName,lineNum, info);	
