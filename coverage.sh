@@ -64,7 +64,7 @@ then
 			fi
 			# function definition lines
 			# excluding ajax calls
-			if echo "$line"|grep -vE "(ajaxSettings.|\s)*(success|error)(\s*)(=|:)(\s*)function"|grep -qE "((:|=)|^)\s*function.*\(.*\)"
+			if echo "$line"|grep -vE "(ajaxSettings.|\s)*(success|error)(\s*)(=|:)(\s*)function"|grep -qE "((:|=)|^)\s*(_.once\()*\s*function.*\(.*\)"
 			then
 				if [ "$first_time" -eq 1 ]
 				then
@@ -105,8 +105,7 @@ elif [ "$1" = "-l" ]
 then
 	if [ -n "$3" ]
 	then	
-		#sed 's/^\s*//' $2| grep -nE "((:|=)|^)\s*function.*\(.*\)" |sed 's/{.*$//' > /tmp/function_list
-		sed 's/^\s*//' $2| grep -nE "(=|^)\s*function.*\(.*\)|(.*)=(.*).extend(\s*)\(" |sed 's/{.*$//'|grep -vE "(ajaxSettings.|\s)*(success|error)(\s*)(=|:)(\s*)function" > /tmp/function_list
+		sed 's/^\s*//' $2| grep -nE "(=|^)\s*(_.once\()*\s*function.*\(.*\)|(.*)=(.*).extend(\s*)\(" |sed 's/{.*$//'|grep -vE "(ajaxSettings.|\s)*(success|error)(\s*)(=|:)(\s*)function" > /tmp/function_list
 		jsname="$(echo "$(cd "$(dirname "$2")"; pwd)/$(basename "$2")"|sed 's-/var/www/asda2/wwwroot/assets/theme_default-/theme-')"
 		
 		cp $3 /tmp/tempCoverage.cvs
@@ -179,22 +178,7 @@ then
 		echo
 		
 	else
-		sed 's/^\s*//' $2| grep -nE "(=|^)\s*function.*\(.*\)|(.*)=(.*).extend(\s*)\(" |sed 's/{.*$//'|grep -vE "(ajaxSettings.|\s)*(success|error)(\s*)(=|:)(\s*)function"
-		exit
-		while read line
-		do
-			linenum=$(echo "$line"|cut -d: -f1)
-			openBracket=$(head -$((linenum-1)) accelerator-common.js|grep -o "{"|wc -l)
-			closeBracket=$(head -$((linenum-1)) accelerator-common.js|grep -o "}"|wc -l)
-			echo -n $line
-			if [ "$openBracket" -gt "$closeBracket" ]
-			then
-				echo " (Have $(expr $openBracket - $closeBracket) parent)";
-			else 
-				echo
-			fi
-			
-		done <<< "$(sed 's/^\s*//' $2| grep -nE "(=)\s*function.*\(.*\)" |sed 's/{.*$//')"
+		sed 's/^\s*//' $2| grep -nE "(=|^)\s*(_.once\()*\s*function.*\(.*\)|(.*)=(.*).extend(\s*)\(" |sed 's/{.*$//'|grep -vE "(ajaxSettings.|\s)*(success|error)(\s*)(=|:)(\s*)function"
 	fi
 elif [ "$1" = "-c" ]
 then

@@ -247,11 +247,11 @@ var coverage = function(){
 			return;
 		
 		// Remove different demonstration styles from function names
-		var funcName = tempArr[0].replace(/^Object./gm,'').replace(/^HTMLDocument./gm,'').replace(/^HTMLHtmlElement./gm,'').replace('<.','.');
+		var funcName = tempArr[0].replace(/^Object./gm,'').replace(/^HTMLDocument./gm,'').replace(/^HTMLHtmlElement./gm,'').replace('<','');
 		var fileName = '/' + tempArr[1].split(":").slice(0,2).join(':').split('?')[0].split('/').slice(3).join('/');
 		var lineNum = parseInt(tempArr[1].split(":")[2]-1);
 		if (fileName && funcName && lineNum)
-			drawToScreen (fileName, funcName,lineNum, info);	
+			drawToScreen (fileName, funcName,lineNum, info);
 	},
 	
 	downloadCSV: function () {
