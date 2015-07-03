@@ -149,22 +149,29 @@ var coverage = function(){
 					filterString = filterString.split(':')[1];
 					$(outputDiv).find("*").show();
 					$(outputDiv).find('div.filename').each( function (index, obj){
-						if (filterString == '')
-							$(obj).parent().show();
-						else if (obj.innerHTML.indexOf(filterString)>-1)
+						if (filterString == '' || obj.innerHTML.indexOf(filterString)>-1)
 							$(obj).parent().show();
 						else
 							$(obj).parent().hide();										
 					}); 
+				} else if (filterString.indexOf("line:") == 0) {
+					filterString = filterString.split(':')[1];
+					$(outputDiv).find('.coverageFunction span#funcLine').each( function (index, obj){
+						if (filterString=='' || obj.innerHTML.indexOf(filterString)>-1) {
+							$(obj).parent().parent().show();
+							$(obj).parent().show();
+						}
+						else {
+							$(obj).parent().hide();					
+							if($(obj).parent().parent().children(':visible').length == 1)
+							   $(obj).parent().parent().hide();
+						}
+					}); 
 				} else	
 					$(outputDiv).find('.coverageFunction span#funcName').each( function (index, obj){
-						if (filterString=='') {
+						if (filterString=='' || obj.innerHTML.indexOf(filterString)>-1) {
 							$(obj).parent().parent().show();
 							$(obj).parent().show();
-						}	
-						else if (obj.innerHTML.indexOf(filterString)>-1) {
-							$(obj).parent().show();
-							$(obj).parent().parent().show();
 						}
 						else {
 							$(obj).parent().hide();					
@@ -250,8 +257,18 @@ var coverage = function(){
 		var funcName = tempArr[0].replace(/^Object./gm,'').replace(/^HTMLDocument./gm,'').replace(/^HTMLHtmlElement./gm,'').replace('<','');
 		var fileName = '/' + tempArr[1].split(":").slice(0,2).join(':').split('?')[0].split('/').slice(3).join('/');
 		var lineNum = parseInt(tempArr[1].split(":")[2]-1);
+		
+		// Chrome sometimes can not include function name in error stack
+		if (funcName == "at")
+			funcName = "Noname@"+lineNum;
+		//For debugging Error Stack for not found functions.
+		if (info == "debug")
+			console.log(eArr);
+			
 		if (fileName && funcName && lineNum)
 			drawToScreen (fileName, funcName,lineNum, info);
+		else
+			console.log(eArr);
 	},
 	
 	downloadCSV: function () {
