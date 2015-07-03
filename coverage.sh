@@ -202,24 +202,32 @@ then
 	else
 		sed 's/^\s*//' $2| grep -nE "(=|^)\s*(_.once\()*\s*function.*\(.*\)|(.*)=(.*).extend(\s*)\(" |sed 's/{.*$//'|grep -vE "(ajaxSettings.|\s)*(success|error)(\s*)(=|:)(\s*)function"
 	fi
-elif [ "$1" = "-c" ]
+elif [ "$1" = "-c" -a -n "$3" ]
 then
-	leftAddition=$(diff <(cut -d';' -f1-3 $2)  <(cut -d';' -f1-3 $3)| grep '<')
-	if [ -n "$leftAddition" ]
-	then	
-		echo
-		echo "Functions called only in $2"
-		echo "----------------------------------"
-		echo "$leftAddition"
-	fi
-	rightAddition=$(diff <(cut -d';' -f1-3 $2)  <(cut -d';' -f1-3 $3)| grep '>')
-	if [ -n "$rightAddition" ]
-	then
-		echo
-		echo "Functions called only in $3"
-		echo "----------------------------------"
-		echo "$rightAddition"
-	fi
+	echo
+	echo "Functions called only in $2"
+	echo "---------------------------------------------------"
+	while read line 
+	do
+		linenum=$(echo "$line"|cut -d';' -f3)
+		filename=$(echo "$line"|cut -d';' -f3)
+		if ! grep "$filename" $2|grep -q "$linenum"
+		then
+			echo $line
+		fi
+	done < $3
+	echo
+	echo "Functions called only in $3"
+	echo "---------------------------------------------------"
+	while read line 
+	do
+		linenum=$(echo "$line"|cut -d';' -f3)
+		filename=$(echo "$line"|cut -d';' -f3)
+		if ! grep "$filename" $3|grep -q "$linenum"
+		then
+			echo $line
+		fi
+	done < $2
 	echo
 elif [ "$1" = "-m" -a $# -gt 2 ]
 then
