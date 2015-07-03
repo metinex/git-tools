@@ -7,8 +7,8 @@
 #
 #################################################################
 
-if [ $# -lt 2 ]
-then
+usage() {
+	echo
 	echo "Usage: $0 -(a|r) JSFile(s)"
 	echo "       $0 -l JSFile [coverage_result]"
 	echo "       $0 -c coverage_result1 coverage_result2"
@@ -22,6 +22,11 @@ then
 	echo -e "\t-m\tMerge CSV outputs and remove dublicates."
 	echo 
 	exit
+}
+
+if [ $# -lt 2 ]
+then
+	usage
 else
 	for fname in ${@:2}
 	do
@@ -125,16 +130,33 @@ then
 					echo "Function definition not found for $fname. Line:${LineNum}. Omitting!!!"
 				elif ! [[ " ${parentList[@]} " =~ " ${parent} " ]];
 				then
-					echo
-					echo "Function definition not found for $fname"
-					echo "Trying parent function: $parent"
-					if grep -qE ":$parent\s*=" /tmp/function_list
+					# Chrome includes extended class in class name. It should be extracted
+					if echo "$parent" | grep -q ".extend"
 					then
-						echo "OK. No problem. Parent found."
-						sed -i "/:$parent\s*=/d" /tmp/function_list
-						parentList+=("$parent")
+						echo "$fname includes name of the extended class. Try to extract it."
+						while ! grep -qE ":$parent\s*=" /tmp/function_list && [ "$parent" != "" ]
+						do
+							parent=$(echo $parent|sed 's/.[[:alnum:]]*$//')
+						done
+						if [ "$parent" == "" ]
+						then
+							echo "Could not find child class in JS file. Omitting it!!!"
+						else	
+							sed -i "/:$parent\s*=/d" /tmp/function_list
+							echo "OK. No problem. Child class found: $parent"
+						fi
 					else
-						echo "Parent also not found. Omitting it!!!"
+						echo
+						echo "Function definition not found for $fname"
+						echo "Trying parent function: $parent"
+						if grep -qE ":$parent\s*=" /tmp/function_list
+						then
+							echo "OK. No problem. Parent found."
+							sed -i "/:$parent\s*=/d" /tmp/function_list
+							parentList+=("$parent")
+						else
+							echo "Parent also not found. Omitting it!!!"
+						fi
 					fi
 				fi
 			fi
@@ -202,4 +224,6 @@ then
 elif [ "$1" = "-m" -a $# -gt 2 ]
 then
 	cat ${@:2}| cut -d";" -f1-3| sort | uniq
+else
+	usage
 fi
