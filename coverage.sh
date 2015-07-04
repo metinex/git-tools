@@ -13,6 +13,7 @@ usage() {
 	echo "       $0 -l JSFile [coverage_result]"
 	echo "       $0 -c coverage_result1 coverage_result2"
 	echo "       $0 -m coverage_results"
+	echo "       $0 -n [JSFile(s)|Directory"
 	echo 
 	echo "Used $0 commands are:"
 	echo -e "\t-a\tInjects coverage caller as the first line of the each function in JSFile."
@@ -20,6 +21,7 @@ usage() {
 	echo -e "\t-l\tList name of functions in JSFile. Lists not covered ones if CSV file is also given."
 	echo -e "\t-c\tCompare function calles in two different CSV outputs."
 	echo -e "\t-m\tMerge CSV outputs and remove dublicates."
+	echo -e "\t-n\tReinjects coverage caller to list of JSFiles or directory"
 	echo 
 	exit
 }
@@ -27,6 +29,10 @@ usage() {
 if [ $# -lt 2 ]
 then
 	usage
+elif [ "$1" == "-n" -a -d "$2" ]
+then
+	echo
+	echo "Directory input for reinjection"
 else
 	for fname in ${@:2}
 	do
@@ -205,7 +211,7 @@ then
 elif [ "$1" = "-c" -a -n "$3" ]
 then
 	echo
-	echo "Functions called only in $2"
+	echo "Functions called only in $3"
 	echo "---------------------------------------------------"
 	while read line 
 	do
@@ -217,7 +223,7 @@ then
 		fi
 	done < $3
 	echo
-	echo "Functions called only in $3"
+	echo "Functions called only in $2"
 	echo "---------------------------------------------------"
 	while read line 
 	do
@@ -232,6 +238,17 @@ then
 elif [ "$1" = "-m" -a $# -gt 2 ]
 then
 	cat ${@:2}| cut -d";" -f1-3| sort | uniq
+elif [ "$1" = "-n" ]
+then
+	if [ -d "$2" ]
+	then
+		grep -Rl coverage $2 > /tmp/file_list
+		$0 -r $(cat /tmp/file_list)
+		$0 -a $(cat /tmp/file_list)
+	else
+		$0 -r $2
+		$0 -a $2	
+	fi
 else
 	usage
 fi
