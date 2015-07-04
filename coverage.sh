@@ -9,7 +9,7 @@
 
 usage() {
 	echo
-	echo "Usage: $0 -(a|r) JSFile(s)"
+	echo "Usage: $0 -(a|r|ad) JSFile(s)"
 	echo "       $0 -l JSFile [coverage_result]"
 	echo "       $0 -c coverage_result1 coverage_result2"
 	echo "       $0 -m coverage_results"
@@ -17,6 +17,7 @@ usage() {
 	echo 
 	echo "Used $0 commands are:"
 	echo -e "\t-a\tInjects coverage caller as the first line of the each function in JSFile."
+	echo -e "\t-ad\tSame as -a option but also injects in debug mode to keep callee of the callee."
 	echo -e "\t-r\tRemoves previously injected coverage callers from JSFile."
 	echo -e "\t-l\tList name of functions in JSFile. Lists not covered ones if CSV file is also given."
 	echo -e "\t-c\tCompare function calles in two different CSV outputs."
@@ -53,7 +54,7 @@ then
 		sed -i '/coverage.logCallee/d' $fname
 		echo "$fname cleared"
 	done
-elif [ "$1" = "-a" ]
+elif [ "$1" = "-a" -o  "$1" = "-ad" ]
 then
 	ls -1 ${@:2}|while read fname 
 	do	
@@ -101,12 +102,22 @@ then
 						echo >> $temFile
 						if echo "$line"|grep -qv "}"
 						then
-							echo -e ' \tcoverage.logCallee();' >> $temFile
+							if [ "$1" = "-ad" ]
+							then
+								echo -e ' \tcoverage.logCallee("debug");' >> $temFile
+							else
+								echo -e ' \tcoverage.logCallee();' >> $temFile
+							fi
 							echo "$line"|xargs|tr -d "{"
 						fi
 					else
 						echo " {" >> $temFile
-						echo -e ' \tcoverage.logCallee();' >> $temFile
+						if [ "$1" = "-ad" ]
+						then
+							echo -e ' \tcoverage.logCallee("debug");' >> $temFile
+						else
+							echo -e ' \tcoverage.logCallee();' >> $temFile
+						fi
 						echo "$line"|xargs
 						omit_next_bracket="1"
 					fi
