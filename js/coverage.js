@@ -147,7 +147,7 @@ var coverage = function(){
 				var filterString = $(this).val();
 				if (filterString.indexOf("file:") == 0) {
 					filterString = filterString.split(':')[1];
-					$(outputDiv).find("*").show();
+					$(outputDiv).find("div.coverageFunction, div.filename").show();
 					$(outputDiv).find('div.filename').each( function (index, obj){
 						if (filterString == '' || obj.innerHTML.indexOf(filterString)>-1)
 							$(obj).parent().show();
@@ -245,11 +245,13 @@ var coverage = function(){
 			return;
 			
 		var eArr = (new Error).stack.split("\n");
-		var tempArr;
+		var tempArr, debugInfo;
 		if (isChrome) {
-			tempArr = eArr[2].replace("(", "").split(" ").slice(-2);	
+			tempArr = eArr[2].replace("(", "").split(" ").slice(-2);
+			debugInfo = eArr[3];
 		} else if (isFirefox) {
 			tempArr = eArr[1].split("@");
+			debugInfo = eArr[2];
 		} else
 			return;
 		
@@ -262,8 +264,10 @@ var coverage = function(){
 		if (funcName == "at")
 			funcName = "Noname@"+lineNum;
 		//For debugging Error Stack for not found functions.
-		if (info == "debug")
+		if (info == "debug") {
 			console.log(eArr);
+			info = debugInfo + "<br>";
+		}
 			
 		if (fileName && funcName && lineNum)
 			drawToScreen (fileName, funcName,lineNum, info);
