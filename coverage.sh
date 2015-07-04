@@ -57,60 +57,68 @@ elif [ "$1" = "-a" ]
 then
 	ls -1 ${@:2}|while read fname 
 	do	
-		first_time="1"
-		omit_next_bracket="0"
-		temFile=/tmp/tempFile
-		> $temFile
+		if grep -q "coverage.logCallee" $fname
+		then
+			echo
+			echo "$fname looks to be injected before. You following command to reinjection."
+			echo "     $0 -n $fname"
+			echo
+		else
+			first_time="1"
+			omit_next_bracket="0"
+			temFile=/tmp/tempFile
+			> $temFile
 
-		# If EOL is not entered to the lase line
-		while IFS= read -r line || [ -n "$line" ]
-		do
-			#If { was put to previous line
-			if [ "$omit_next_bracket" -eq 1 ]
-			then
-				echo -n "$line"|tr -d "{" >> $temFile
-				omit_next_bracket="0"
-			else
-				echo -n "$line" >> $temFile
-			fi
-			# function definition lines
-			# excluding ajax calls
-			if echo "$line"|grep -vE "(ajaxSettings.|\s)*(success|error)(\s*)(=|:)(\s*)function"|grep -qE "((:|=)|^)\s*(_.once\()*\s*function.*\(.*\)"
-			then
-				if [ "$first_time" -eq 1 ]
+			# If EOL is not entered to the lase line
+			while IFS= read -r line || [ -n "$line" ]
+			do
+				#If { was put to previous line
+				if [ "$omit_next_bracket" -eq 1 ]
 				then
-					echo
-					echo $fname
-					echo ---------------------------------------------
-					first_time="0"
-				fi
-				
-				echo -n "Added coverage after: "					  
-				# { is in the same line and } is not there. 
-				# If } there probably empty function do not
-				# think about it. Probably empty
-				if echo "$line"|grep -q "{"
-				then 
-					echo >> $temFile
-					if echo "$line"|grep -qv "}"
-					then
-						echo -e ' \tcoverage.logCallee();' >> $temFile
-						echo "$line"|xargs|tr -d "{"
-					fi
+					echo -n "$line"|tr -d "{" >> $temFile
+					omit_next_bracket="0"
 				else
-					echo " {" >> $temFile
-					echo -e ' \tcoverage.logCallee();' >> $temFile
-					echo "$line"|xargs
-					omit_next_bracket="1"
+					echo -n "$line" >> $temFile
 				fi
-				
-			else 
-				echo >> $temFile
-			fi
-		done < $fname
+				# function definition lines
+				# excluding ajax calls
+				if echo "$line"|grep -vE "(ajaxSettings.|\s)*(success|error)(\s*)(=|:)(\s*)function"|grep -qE "((:|=)|^)\s*(_.once\()*\s*function.*\(.*\)"
+				then
+					if [ "$first_time" -eq 1 ]
+					then
+						echo
+						echo $fname
+						echo ---------------------------------------------
+						first_time="0"
+					fi
+					
+					echo -n "Added coverage after: "					  
+					# { is in the same line and } is not there. 
+					# If } there probably empty function do not
+					# think about it. Probably empty
+					if echo "$line"|grep -q "{"
+					then 
+						echo >> $temFile
+						if echo "$line"|grep -qv "}"
+						then
+							echo -e ' \tcoverage.logCallee();' >> $temFile
+							echo "$line"|xargs|tr -d "{"
+						fi
+					else
+						echo " {" >> $temFile
+						echo -e ' \tcoverage.logCallee();' >> $temFile
+						echo "$line"|xargs
+						omit_next_bracket="1"
+					fi
+					
+				else 
+					echo >> $temFile
+				fi
+			done < $fname
 
-		mv $fname ${fname}.bak
-		cat $temFile > $fname
+			mv $fname ${fname}.bak
+			cat $temFile > $fname
+		fi
 	done			
 elif [ "$1" = "-l" ]
 then
